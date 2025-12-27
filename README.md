@@ -1,5 +1,7 @@
 # MicroPython Calculator
 
+[![Tests](https://github.com/mpflaga/Mega_Calculator_MicroPython/actions/workflows/test.yml/badge.svg)](https://github.com/mpflaga/Mega_Calculator_MicroPython/actions/workflows/test.yml)
+
 A 9-digit calculator with NeoPixel 7-segment LED display, refactored from Arduino to MicroPython.
 
 ## Overview
