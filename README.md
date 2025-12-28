@@ -50,6 +50,29 @@ Where:
 - `(` = Left parenthesis (reserved for future use)
 - `%` = Modulo (reserved for future use)
 
+## Usage Modes
+
+This calculator supports **two modes of operation**:
+
+### 1. Hardware Mode (Default)
+Use physical buttons and LED display on MicroPython hardware (Raspberry Pi Pico, ESP32, etc.)
+
+### 2. Serial Console Mode
+Type commands directly into a serial terminal - perfect for:
+- Testing without hardware
+- Development and debugging
+- Remote operation over USB/UART
+
+To use serial console mode, simply type keys into the terminal while the calculator is running. The calculator accepts input from both physical buttons AND serial console simultaneously.
+
+#### Standalone Serial-Only Mode
+For testing without any hardware, run:
+```bash
+python serial_calculator.py
+```
+
+This provides a pure console interface with no hardware dependencies.
+
 ## Installation
 
 1. Install MicroPython on your board following the official instructions

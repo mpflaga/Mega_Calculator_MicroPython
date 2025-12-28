@@ -139,6 +139,11 @@ class CalculatorApp:
     def run(self) -> None:
         """Main application loop"""
         print("Entering main loop...")
+        print("\nCalculator ready!")
+        print("You can use physical buttons or type commands in the serial console.")
+        print("Available keys: 0-9, +, -, *, /, =, ., n (negate), "
+              "c (clear entry), C (clear all), b (backspace)")
+        print("Press Ctrl+C to exit.\n")
 
         while True:
             try:
@@ -158,7 +163,10 @@ class CalculatorApp:
                     if result and sys.stdin in result[0]:
                         key: str = sys.stdin.read(1)
                         if key:
-                            self.process_key(key)
+                            # Filter out newlines and process valid keys
+                            if key not in ('\n', '\r'):
+                                print(f"Serial input: '{key}'")
+                                self.process_key(key)
                 except (AttributeError, OSError, TypeError):
                     pass  # Serial input not available or not implemented
 
