@@ -318,5 +318,293 @@ class TestCalculatorEdgeCases(unittest.TestCase):
         self.assertEqual(self.calc.display_str, '5')
 
 
+class TestCalculatorHandlerMethods(unittest.TestCase):
+    """Test cases for individual handler methods in isolation"""
+
+    def setUp(self) -> None:
+        """Set up test fixtures"""
+        self.calc: Calculator = Calculator(display_size=9)
+        self.calc.begin()
+
+    def test_handle_operator_addition(self) -> None:
+        """Test _handle_operator sets up addition correctly"""
+        self.calc.display_str = "42"
+        self.calc._handle_operator('+')
+
+        self.assertEqual(self.calc.operation_char, '+')
+        self.assertTrue(self.calc.last_key_was_operation)
+        self.assertEqual(self.calc.num_str0, "42")
+
+    def test_handle_operator_subtraction(self) -> None:
+        """Test _handle_operator sets up subtraction correctly"""
+        self.calc.display_str = "100"
+        self.calc._handle_operator('-')
+
+        self.assertEqual(self.calc.operation_char, '-')
+        self.assertTrue(self.calc.last_key_was_operation)
+        self.assertEqual(self.calc.num_str0, "100")
+
+    def test_handle_operator_multiplication(self) -> None:
+        """Test _handle_operator sets up multiplication correctly"""
+        self.calc.display_str = "7"
+        self.calc._handle_operator('*')
+
+        self.assertEqual(self.calc.operation_char, '*')
+        self.assertTrue(self.calc.last_key_was_operation)
+        self.assertEqual(self.calc.num_str0, "7")
+
+    def test_handle_operator_division(self) -> None:
+        """Test _handle_operator sets up division correctly"""
+        self.calc.display_str = "50"
+        self.calc._handle_operator('/')
+
+        self.assertEqual(self.calc.operation_char, '/')
+        self.assertTrue(self.calc.last_key_was_operation)
+        self.assertEqual(self.calc.num_str0, "50")
+
+    def test_handle_equals_addition(self) -> None:
+        """Test _handle_equals performs addition correctly"""
+        self.calc.display_str = "3"
+        self.calc.num_str0 = "5"
+        self.calc.operation_char = '+'
+
+        self.calc._handle_equals()
+
+        self.assertEqual(self.calc.display_str, "8")
+        self.assertEqual(self.calc.num_str1, "3")
+        self.assertTrue(self.calc.no_new_number_since_last_calc)
+
+    def test_handle_equals_subtraction(self) -> None:
+        """Test _handle_equals performs subtraction correctly"""
+        self.calc.display_str = "4"
+        self.calc.num_str0 = "9"
+        self.calc.operation_char = '-'
+
+        self.calc._handle_equals()
+
+        self.assertEqual(self.calc.display_str, "5")
+        self.assertEqual(self.calc.num_str1, "4")
+
+    def test_handle_equals_multiplication(self) -> None:
+        """Test _handle_equals performs multiplication correctly"""
+        self.calc.display_str = "7"
+        self.calc.num_str0 = "6"
+        self.calc.operation_char = '*'
+
+        self.calc._handle_equals()
+
+        self.assertEqual(self.calc.display_str, "42")
+        self.assertEqual(self.calc.num_str1, "7")
+
+    def test_handle_equals_division(self) -> None:
+        """Test _handle_equals performs division correctly"""
+        self.calc.display_str = "5"
+        self.calc.num_str0 = "10"
+        self.calc.operation_char = '/'
+
+        self.calc._handle_equals()
+
+        self.assertEqual(self.calc.display_str, "2")
+        self.assertEqual(self.calc.num_str1, "5")
+
+    def test_handle_equals_division_by_zero(self) -> None:
+        """Test _handle_equals handles division by zero correctly"""
+        self.calc.display_str = "0"
+        self.calc.num_str0 = "10"
+        self.calc.operation_char = '/'
+
+        self.calc._handle_equals()
+
+        self.assertEqual(self.calc.display_str, "Error")
+
+    def test_handle_equals_no_operation_set(self) -> None:
+        """Test _handle_equals when no operation is set"""
+        self.calc.display_str = "5"
+        self.calc.num_str0 = "3"
+        self.calc.operation_char = None
+
+        self.calc._handle_equals()
+
+        # Should set num_str1 but display stays as "0" (reset behavior)
+        self.assertEqual(self.calc.num_str1, "5")
+        self.assertTrue(self.calc.no_new_number_since_last_calc)
+
+    def test_handle_backspace_multiple_digits(self) -> None:
+        """Test _handle_backspace removes last digit"""
+        self.calc.display_str = "123"
+
+        self.calc._handle_backspace()
+
+        self.assertEqual(self.calc.display_str, "12")
+
+    def test_handle_backspace_single_digit(self) -> None:
+        """Test _handle_backspace on single digit resets to 0"""
+        self.calc.display_str = "5"
+
+        self.calc._handle_backspace()
+
+        self.assertEqual(self.calc.display_str, "0")
+
+    def test_handle_backspace_with_decimal(self) -> None:
+        """Test _handle_backspace with decimal numbers"""
+        self.calc.display_str = "12.5"
+
+        self.calc._handle_backspace()
+
+        self.assertEqual(self.calc.display_str, "12.")
+
+    def test_handle_clear_entry(self) -> None:
+        """Test _handle_clear_entry resets display only"""
+        self.calc.display_str = "123"
+        self.calc.num_str0 = "456"
+        self.calc.num_str1 = "789"
+
+        self.calc._handle_clear_entry()
+
+        self.assertEqual(self.calc.display_str, "0")
+        # Other state should remain unchanged
+        self.assertEqual(self.calc.num_str0, "456")
+        self.assertEqual(self.calc.num_str1, "789")
+
+    def test_handle_clear_all(self) -> None:
+        """Test _handle_clear_all resets all calculator state"""
+        self.calc.display_str = "123"
+        self.calc.num_str0 = "456"
+        self.calc.num_str1 = "789"
+        self.calc.operation_char = '+'
+        self.calc.last_key_was_operation = True
+        self.calc.no_new_number_since_last_calc = True
+
+        self.calc._handle_clear_all()
+
+        self.assertEqual(self.calc.display_str, "0")
+        self.assertEqual(self.calc.num_str0, "0")
+        self.assertEqual(self.calc.num_str1, "0")
+        self.assertIsNone(self.calc.operation_char)
+        self.assertFalse(self.calc.last_key_was_operation)
+        self.assertFalse(self.calc.no_new_number_since_last_calc)
+
+    def test_handle_negate_positive_to_negative(self) -> None:
+        """Test _handle_negate toggles positive number to negative"""
+        self.calc.display_str = "5"
+
+        self.calc._handle_negate()
+
+        self.assertEqual(self.calc.display_str, "-5")
+
+    def test_handle_negate_negative_to_positive(self) -> None:
+        """Test _handle_negate toggles negative number to positive"""
+        self.calc.display_str = "-5"
+
+        self.calc._handle_negate()
+
+        self.assertEqual(self.calc.display_str, "5")
+
+    def test_handle_negate_from_zero(self) -> None:
+        """Test _handle_negate from zero creates minus sign"""
+        self.calc.display_str = "0"
+
+        self.calc._handle_negate()
+
+        self.assertEqual(self.calc.display_str, "-")
+
+    def test_handle_negate_just_minus_sign(self) -> None:
+        """Test _handle_negate on just minus sign removes it (empty string)"""
+        self.calc.display_str = "-"
+
+        self.calc._handle_negate()
+
+        self.assertEqual(self.calc.display_str, "")
+
+    def test_handle_decimal_from_regular_number(self) -> None:
+        """Test _handle_decimal adds decimal point to number"""
+        self.calc.display_str = "5"
+
+        self.calc._handle_decimal()
+
+        self.assertEqual(self.calc.display_str, "5.")
+
+    def test_handle_decimal_after_operation(self) -> None:
+        """Test _handle_decimal after operation starts with 0."""
+        self.calc.display_str = "5"
+        self.calc.last_key_was_operation = True
+
+        self.calc._handle_decimal()
+
+        self.assertEqual(self.calc.display_str, "0.")
+        self.assertFalse(self.calc.last_key_was_operation)
+
+    def test_handle_decimal_after_calculation(self) -> None:
+        """Test _handle_decimal after equals starts with 0."""
+        self.calc.display_str = "8"
+        self.calc.no_new_number_since_last_calc = True
+
+        self.calc._handle_decimal()
+
+        self.assertEqual(self.calc.display_str, "0.")
+        self.assertFalse(self.calc.no_new_number_since_last_calc)
+
+    def test_handle_decimal_already_has_decimal(self) -> None:
+        """Test _handle_decimal does nothing if decimal already present"""
+        self.calc.display_str = "3.14"
+
+        self.calc._handle_decimal()
+
+        self.assertEqual(self.calc.display_str, "3.14")
+
+    def test_handle_digit_basic(self) -> None:
+        """Test _handle_digit appends digit to display"""
+        self.calc.display_str = "12"
+
+        self.calc._handle_digit("3")
+
+        self.assertEqual(self.calc.display_str, "123")
+
+    def test_handle_digit_from_zero(self) -> None:
+        """Test _handle_digit replaces zero"""
+        self.calc.display_str = "0"
+
+        self.calc._handle_digit("7")
+
+        self.assertEqual(self.calc.display_str, "7")
+
+    def test_handle_digit_after_operation(self) -> None:
+        """Test _handle_digit after operation clears display"""
+        self.calc.display_str = "5"
+        self.calc.last_key_was_operation = True
+
+        self.calc._handle_digit("3")
+
+        self.assertEqual(self.calc.display_str, "3")
+        self.assertFalse(self.calc.last_key_was_operation)
+
+    def test_handle_digit_after_calculation(self) -> None:
+        """Test _handle_digit after equals clears result"""
+        self.calc.display_str = "8"
+        self.calc.no_new_number_since_last_calc = True
+
+        self.calc._handle_digit("2")
+
+        self.assertEqual(self.calc.display_str, "2")
+        self.assertFalse(self.calc.no_new_number_since_last_calc)
+
+    def test_handle_digit_respects_display_size_limit(self) -> None:
+        """Test _handle_digit respects max display size"""
+        self.calc.display_str = "123456789"  # 9 digits
+
+        self.calc._handle_digit("0")
+
+        # Should not add the digit
+        self.assertEqual(self.calc.display_str, "123456789")
+
+    def test_handle_digit_with_decimal_and_negative(self) -> None:
+        """Test _handle_digit correctly counts digits with decimal and minus"""
+        self.calc.display_str = "-12.34"  # 4 actual digits
+
+        self.calc._handle_digit("5")
+
+        self.assertEqual(self.calc.display_str, "-12.345")
+
+
 if __name__ == '__main__':
     unittest.main()
