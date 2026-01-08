@@ -1,6 +1,9 @@
 """
 Calculator Logic Module
 MicroPython version - simplified without BigNumber library
+
+Refactored with dispatcher table pattern for better maintainability.
+Memory-optimized for ESP32/MicroPython environments.
 """
 
 from __future__ import annotations
@@ -15,7 +18,17 @@ except ImportError:
 
 
 class Calculator:
-    """Standard 9-digit calculator with decimal points"""
+    """
+    Standard 9-digit calculator with decimal points.
+
+    Uses dispatcher pattern for operation handling to improve
+    maintainability and extensibility.
+
+    Architecture:
+        - parse() method routes input to specialized handlers
+        - Handler methods (_handle_*) process specific operations
+        - State managed through display_str, num_str0, num_str1
+    """
 
     def __init__(self, display_size: int) -> None:
         """
@@ -25,12 +38,16 @@ class Calculator:
             display_size: Maximum number of digits in display
         """
         self.display_size: int = display_size
+
+        # Operation state tracking
         self.last_key_was_operation: bool = False
         self.operation_char: Optional[str] = None
         self.no_new_number_since_last_calc: bool = False
+
+        # Calculator memory (display and operands)
         self.display_str: str = "0"
-        self.num_str0: str = "0"
-        self.num_str1: str = "0"
+        self.num_str0: str = "0"  # First operand
+        self.num_str1: str = "0"  # Second operand
 
     def begin(self) -> None:
         """Initialize the calculator state"""
@@ -187,20 +204,41 @@ class Calculator:
 
     def parse(self, in_byte: str) -> str:
         """
-        Parse a character input and update calculator state
+        Parse a character input and update calculator state.
+
+        Uses dispatcher pattern to route inputs to appropriate handlers.
+        This pattern makes adding new operations easier - just add a new
+        handler method and dispatcher entry.
 
         Args:
             in_byte: Character input (digit, operator, or command)
+                    Operators: +, -, *, /
+                    Commands: = (equals), b (backspace), c (clear entry),
+                             C (clear all), n (negate), . (decimal)
+                    Digits: 0-9
 
         Returns:
-            String to display
+            String to display on calculator screen
+
+        Examples:
+            >>> calc.parse('5')  # Enter digit 5
+            '5'
+            >>> calc.parse('+')  # Add operator
+            '5'
+            >>> calc.parse('3')  # Enter digit 3
+            '3'
+            >>> calc.parse('=')  # Calculate result
+            '8'
         """
         # Dispatcher table mapping input characters to handler methods
+        # Created on each call to avoid storing in memory (MicroPython optimization)
         dispatch_table = {
+            # Operators - all use same handler
             '+': lambda: self._handle_operator(in_byte),
             '-': lambda: self._handle_operator(in_byte),
             '*': lambda: self._handle_operator(in_byte),
             '/': lambda: self._handle_operator(in_byte),
+            # Commands - each has specialized handler
             '=': self._handle_equals,
             'b': self._handle_backspace,
             'c': self._handle_clear_entry,
@@ -209,14 +247,14 @@ class Calculator:
             '.': self._handle_decimal,
         }
 
-        # Check if input is in dispatch table
+        # Route input to appropriate handler
         if in_byte in dispatch_table:
             dispatch_table[in_byte]()
-        # Check if input is a digit
         elif in_byte.isdigit():
             self._handle_digit(in_byte)
+        # Unknown characters are silently ignored
 
-        # Debug output
+        # Debug output for development/testing
         print(f"displayStr=\"{self.display_str}\", numStr0=\"{self.num_str0}\", "
               f"numStr1=\"{self.num_str1}\", operationChar=\"{self.operation_char}\", "
               f"lastKeyWasOp=\"{self.last_key_was_operation}\"")
